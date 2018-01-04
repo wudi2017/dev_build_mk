@@ -1,0 +1,1 @@
+int div_ori(int x, int y);

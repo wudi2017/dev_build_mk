@@ -1,0 +1,13 @@
+#$(info [BUILD] clear_vars ===============================================)
+
+LOCAL_MODULE:= 
+LOCAL_C_INCLUDES:=
+LOCAL_SRC_FILES:= 
+
+LOCAL_CXXFLAGS:=
+
+LOCAL_LDFLAGS:=
+LOCAL_LDLIBS:=
+
+LOCAL_SHARED_LIBRARIES:=
+LOCAL_STATIC_LIBRARIES:=
