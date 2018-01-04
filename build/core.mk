@@ -11,9 +11,9 @@
 
 # config compiler
 
-CC = gcc
-CXX = g++
-AR = ar
+CC ?= gcc
+CXX ?= g++
+AR ?= ar
 
 # config global vars
 
