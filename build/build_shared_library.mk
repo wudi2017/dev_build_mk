@@ -22,13 +22,14 @@ $(GLOBAL_OUTPUT_SHARED)/$(LOCAL_MODULE).so: INNER_LDLIBS := $(patsubst lib%,-l%,
 $(GLOBAL_OUTPUT_SHARED)/$(LOCAL_MODULE).so: $(OBJS)
 	@echo [$(INNER_MODULE)] INSTALL $@
 	@-mkdir -p $(GLOBAL_OUTPUT_SHARED)
-	$(hide)$(CXX) -shared -o $@ $^ $(INNER_LDFLAGS) $(INNER_LDLIBS)
+	$(hide)$(CXX) -shared -o $@ $^ $(GLOBAL_LDFLAGS) $(INNER_LDFLAGS) $(GLOBAL_LDLIBS) $(INNER_LDLIBS)
 
 #$(OBJS): OBJSDIR:=$(foreach objfile, $(OBJS), $(dir $(objfile)))
 $(OBJS): INNER_MODULE:=$(LOCAL_MODULE)
 $(OBJS): INNER_INC_FLAGS:=$(foreach incdir, $(LOCAL_C_INCLUDES), -I$(incdir))
+$(OBJS): GLOBAL_INC_FLAGS:=$(foreach incdir, $(GLOBAL_C_INCLUDES), -I$(incdir))
 $(OBJS): INNER_CXXFLAGS:= $(LOCAL_CXXFLAGS)
 $(OBJS): $(GLOBAL_OUTPUT_OBJ)/$(LOCAL_MODULE)/%.o: $(LOCAL_PATH)/%.cpp
 	@echo [$(INNER_MODULE)] CXX $@ '<=' $<
 	@-mkdir -p $(dir $@)
-	$(hide)$(CXX) $(INNER_CXXFLAGS) $(INNER_INC_FLAGS) -c $< -o $@
+	$(hide)$(CXX) $(GLOBAL_CXXFLAG) $(INNER_CXXFLAGS) $(GLOBAL_INC_FLAGS) $(INNER_INC_FLAGS) -c $< -o $@

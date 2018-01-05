@@ -27,8 +27,9 @@ $(GLOBAL_OUTPUT_STATIC)/$(LOCAL_MODULE).a: $(OBJS)
 #$(OBJS): OBJSDIR:=$(foreach objfile, $(OBJS), $(dir $(objfile)))
 $(OBJS): INNER_MODULE:=$(LOCAL_MODULE)
 $(OBJS): INNER_INC_FLAGS:=$(foreach incdir, $(LOCAL_C_INCLUDES), -I$(incdir))
+$(OBJS): GLOBAL_INC_FLAGS:=$(foreach incdir, $(GLOBAL_C_INCLUDES), -I$(incdir))
 $(OBJS): INNER_CXXFLAGS:= $(LOCAL_CXXFLAGS)
 $(OBJS): $(GLOBAL_OUTPUT_OBJ)/$(LOCAL_MODULE)/%.o: $(LOCAL_PATH)/%.cpp
 	@echo [$(INNER_MODULE)] CXX $@ '<=' $<
 	@-mkdir -p $(dir $@)
-	$(hide)$(CXX) $(INNER_CXXFLAGS) $(INNER_INC_FLAGS) -c $< -o $@
+	$(hide)$(CXX) $(GLOBAL_CXXFLAG) $(INNER_CXXFLAGS) $(GLOBAL_INC_FLAGS) $(INNER_INC_FLAGS) -c $< -o $@
