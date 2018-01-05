@@ -59,10 +59,9 @@ define my-dir
 $(strip $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST)))))
 endef
 
-# local define
+# clear & define local vars
 
-LOCAL_MODULE := 
-LOCAL_SRC_FILES := 
+include $(CLEAR_VARS) 
 
 # include all
  
