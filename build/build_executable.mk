@@ -37,7 +37,7 @@ $(OBJS): INNER_CXXFLAGS:= $(LOCAL_CXXFLAGS)
 $(OBJS): $(GLOBAL_OUTPUT_OBJ)/$(LOCAL_MODULE)/%.o: $(LOCAL_PATH)/%.cpp
 	@echo [$(INNER_MODULE)] CXX $@ '<=' $<
 	@-mkdir -p $(dir $@)
-	$(hide)$(CXX) $(GLOBAL_CXXFLAG) $(INNER_CXXFLAGS) $(GLOBAL_INC_FLAGS) $(INNER_INC_FLAGS) -MMD -MT $@ -MF $@.d -c $< -o $@
+	$(hide)$(CXX) $(GLOBAL_CXXFLAGS) $(INNER_CXXFLAGS) $(GLOBAL_INC_FLAGS) $(INNER_INC_FLAGS) -MMD -MT $@ -MF $@.d -c $< -o $@
 
 # -MMD -MT $@ -MF $@.d
 # generate include,cpp dependences

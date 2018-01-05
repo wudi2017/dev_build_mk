@@ -18,7 +18,7 @@ AR ?= ar
 # config global vars
 
 GLOBAL_C_INCLUDES := 
-GLOBAL_CXXFLAG := 
+GLOBAL_CXXFLAGS := 
 GLOBAL_LDFLAGS := 
 GLOBAL_LDLIBS := 
 
