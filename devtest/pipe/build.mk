@@ -1,0 +1,26 @@
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS) 
+LOCAL_MODULE := pipeclient
+LOCAL_C_INCLUDES:= \
+	$(LOCAL_PATH) 
+LOCAL_SRC_FILES := \
+	$(LOCAL_PATH)/pipeclient.cpp
+LOCAL_CXXFLAGS:= -std=c++11 
+LOCAL_LDLIBS:= -lpthread
+LOCAL_SHARED_LIBRARIES:= 
+LOCAL_STATIC_LIBRARIES:= 
+include $(BUILD_EXECUTABLE)  
+
+
+include $(CLEAR_VARS) 
+LOCAL_MODULE := pipeserver
+LOCAL_C_INCLUDES:= \
+	$(LOCAL_PATH) 
+LOCAL_SRC_FILES := \
+	$(LOCAL_PATH)/pipeserver.cpp
+LOCAL_CXXFLAGS:= -std=c++11 
+LOCAL_LDLIBS:= -lpthread
+LOCAL_SHARED_LIBRARIES:= 
+LOCAL_STATIC_LIBRARIES:= 
+include $(BUILD_EXECUTABLE)  

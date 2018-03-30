@@ -77,3 +77,46 @@ void testcase_multithread()
 
 	printf("This is the main thread process exit end.\n");
 }
+
+
+
+class CA
+{
+public:
+	CA()
+	{
+		m_data=0;
+	}
+	int increase(int x)
+	{
+		m_data += x;
+		return m_data;
+	}
+
+	int m_data;
+};
+
+typedef int (CA::*fp_increase)(int x);
+
+typedef int (*fp_increase_c)(CA* o, int x);
+
+void testcase_cpp_obj_func_call()
+{
+	CA a;
+
+	printf("call origin = %d\n", a.increase(1));
+	printf("call origin = %d\n", a.increase(2));
+
+
+	CA * pa = &a;
+	fp_increase pfaddr = &CA::increase;
+	int itest2 = (pa->*pfaddr)(2);
+	printf("call C++ class::func_addr = %d\n", itest2);
+	//  ((m_cReplyInnerAddr.m_pThis)->*(m_cReplyInnerAddr.m_pfc))(evcontext, pMsg);
+
+
+	long* funcAddr = (long*)(&pfaddr);
+	fp_increase_c pfaddrcc = (fp_increase_c)(*funcAddr);
+	int itest3 = pfaddrcc(pa, 10);
+	printf("call C style func_addr = %d\n", itest3);
+}

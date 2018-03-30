@@ -2,5 +2,5 @@
 
 void demo_test()
 {
-	printf("XXXXXXXXXXXXXXXXXXXXX\n");
+	
 }
