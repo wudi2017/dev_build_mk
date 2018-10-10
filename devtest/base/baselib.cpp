@@ -8,43 +8,45 @@ using namespace std;
 
 #define TESTLOG printf
 
-void PrintMemBuf(const char * buf, int size)
+void PrintMemBuf(const void * buf, const int size)
 {
-	int eventLineOutBytes = 32;
+    const char * cbuf = (const char*)buf;
+    int eventLineOutBytes = 32;
 
-	std::string sLine;
-	char tmpbuf[16];
+    std::string sLine;
+    char tmpbuf[16];
 
-	int i = 0;
-	for (; i < size; ++i)
-	{
-		char c = buf[i];
-		sprintf(tmpbuf, "%02x ", c);
-		sLine.append(tmpbuf);
+    int i = 0;
+    for (; i < size; ++i)
+    {
+        char c = cbuf[i];
+        sprintf(tmpbuf, "%02x ", c);
+        sLine.append(tmpbuf);
 
-		if ((i+1)%eventLineOutBytes == 0)
-		{
-			int ad_i = i/eventLineOutBytes;
-			const void* addr = buf + ad_i*eventLineOutBytes;
-			TESTLOG("[%p] %s\n", addr, sLine.c_str());
-			sLine.clear();
-		}
-	}
+        if ((i+1)%eventLineOutBytes == 0)
+        {
+            int ad_i = i/eventLineOutBytes;
+            const void* addr = cbuf + ad_i*eventLineOutBytes;
+            TESTLOG("[%p] %s\n", addr, sLine.c_str());
+            sLine.clear();
+        }
+    }
 
-	if (sLine.length()>0)
-	{
-		int ad_i = i/eventLineOutBytes;
-		const void* addr = buf + ad_i*eventLineOutBytes;
-		TESTLOG("[%p] %s\n", addr, sLine.c_str());
-		sLine.clear();
-	}
+    if (sLine.length()>0)
+    {
+        int ad_i = i/eventLineOutBytes;
+        const void* addr = cbuf + ad_i*eventLineOutBytes;
+        TESTLOG("[%p] %s\n", addr, sLine.c_str());
+        sLine.clear();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // CheckSum
 
-unsigned int CheckSum(const char * buf, int size)
+unsigned int CheckSum(const void * buf, const int size)
 {
+	const char * cbuf = (const char*)buf;
 	unsigned int checkSum = 0;
 	int iCntDw = size/4;
 	int iCntByte = size%4;
@@ -52,7 +54,7 @@ unsigned int CheckSum(const char * buf, int size)
 	// printf("checkSum iCntDw %d\n", iCntDw);
 	// printf("checkSum iCntByte %d\n", iCntByte);
 
-	unsigned int * pDw = (unsigned int *)buf;
+	unsigned int * pDw = (unsigned int *)cbuf;
 	for (int i = 0; i < iCntDw; ++i)
 	{
 		unsigned int ui = *pDw;
@@ -64,7 +66,7 @@ unsigned int CheckSum(const char * buf, int size)
 		pDw++;
 	}
 
-	const char * bufLast = buf + 4*iCntDw;
+	const char * bufLast = cbuf + 4*iCntDw;
 	for (int i = 0; i < iCntByte; ++i)
 	{
 		char ui = *bufLast;

@@ -8,24 +8,24 @@ extern void demo_test();
 
 int main() {
 
-	demo_test();
-	return 0;
+	// demo_test();
+	// return 0;
 
-	unsigned long dwSerial = 0x5f5e100;
+	// unsigned long dwSerial = 0x5f5e100;
 
-	std::string id;
+	// std::string id;
 
- 	char buf[64];
-    memset(buf, 0, 64);
-    snprintf(buf, 64, "281B%08d", dwSerial);
-    id.assign(buf);
+ // 	char buf[64];
+ //    memset(buf, 0, 64);
+ //    snprintf(buf, 64, "281B%08d", dwSerial);
+ //    id.assign(buf);
 
 
-    printf("ID::: [%s]\n", id.c_str());
+ //    printf("ID::: [%s]\n", id.c_str());
 
-    return 0;
+ //    return 0;
 
-	snprintf(buf, 64, "281B%08X", dwSerial);
+	// snprintf(buf, 64, "281B%08X", dwSerial);
 
 
 	demo_test();
