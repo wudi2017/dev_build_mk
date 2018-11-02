@@ -17,7 +17,9 @@ int constexpr length(const char* str)
 #include "stdio.h"
 #include <pthread.h> // thread
 #include <unistd.h>  // sleep(s) usleep(us)
-#include <string.h>  // memset
+#include <string.h>  // strlen
+#include <string>  // std string
+#include <vector>  // std vector
 
 // base No lock queue list
 // multi thread add: single thread get
@@ -101,6 +103,11 @@ void PrintMemBuf(const void * buf, const int size);
 // CheckSum
 
 unsigned int CheckSum(const void * buf, const int size);
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// std string StringSplit
+
+std::vector<std::string> StringSplit(std::string str, std::string pat);
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // log

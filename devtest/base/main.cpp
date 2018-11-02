@@ -8,6 +8,8 @@ extern void demo_test();
 
 int main() {
 
+		
+
 	// demo_test();
 	// return 0;
 
@@ -27,7 +29,6 @@ int main() {
 
 	// snprintf(buf, 64, "281B%08X", dwSerial);
 
-
 	demo_test();
 
 	{
@@ -42,6 +43,15 @@ int main() {
 		printf("-----------------------------------------------------------------------------\n");
 		char buf[10] = {5,0,0,0,8,0,0,0,1,10};
 		printf("CheckSum %d\n", CheckSum(buf,10));
+	}
+
+	{
+		printf("-----------------------------------------------------------------------------\n");
+		std::vector<std::string> plits = StringSplit("abcdefghij\nklmn876opq123456687409835abc\n\ndefghijklmnopq187623456687409835", "\n");
+		for (int i = 0; i < plits.size(); i++)
+		{
+			printf("%s\n", plits.at(i).c_str());
+		}
 	}
 
 	{
