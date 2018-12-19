@@ -463,3 +463,26 @@ const char* psmap_get(const char * key)
     }
 }
 
+void* protect_tail_new(const int size)
+{
+	int pagesize = 1024*4;
+
+	int needPageCount = size%pagesize + 2;
+
+	int fd = open("/dev/zero", O_RDONLY);
+	printf("fd:%d\n", fd);
+	char * mem = (char*)mmap(NULL, needPageCount*pagesize, PROT_WRITE, MAP_PRIVATE, fd, 0);
+	printf("mem:%p\n", mem);
+	close(fd);
+
+	mprotect(mem, pagesize*(needPageCount-1), PROT_READ|PROT_WRITE);
+	mprotect(mem+pagesize*(needPageCount-1), pagesize, PROT_READ);
+
+	char * userAddr = mem+pagesize*(needPageCount-1)-size;
+
+	return userAddr;
+}
+void protect_tail_delete(const void* addr)
+{
+	
+}

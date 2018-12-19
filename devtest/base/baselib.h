@@ -135,6 +135,11 @@ extern int psmap_find(const char * key);
 extern void psmap_set(const char * key, const char* value);
 extern const char* psmap_get(const char * key);
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// protect tail mem new
+
+void* protect_tail_new(const int size);
+void protect_tail_delete(const void* addr);
 
 
 #endif //#ifndef BASELIB_H_
