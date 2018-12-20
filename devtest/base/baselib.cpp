@@ -463,16 +463,44 @@ const char* psmap_get(const char * key)
     }
 }
 
+
+
+#include <ctime>
+static bool s_bRandFlag = false;
+struct MMAPITEM
+{
+	MMAPITEM()
+	{
+		memset(fileName, 0, sizeof(fileName));
+		mmapAddr = NULL;
+		size = 0;
+
+	}
+	char fileName[64];
+	void* mmapAddr;
+	int size;
+};
+static std::map<void*, MMAPITEM> s_mmapTable;
 void* protect_tail_new(const int size)
 {
 	int pagesize = 1024*4;
 
-	int needPageCount = size%pagesize + 2;
+	int needPageCount = size/pagesize + 2;
 
-	int fd = open("/dev/zero", O_RDONLY);
-	printf("fd:%d\n", fd);
-	char * mem = (char*)mmap(NULL, needPageCount*pagesize, PROT_WRITE, MAP_PRIVATE, fd, 0);
-	printf("mem:%p\n", mem);
+	if (!s_bRandFlag)
+	{
+		srand(time(0));
+		s_bRandFlag = true;
+	}
+
+	int iRand = rand();
+	char mmFile[64];
+	memset(mmFile, 0, 64);
+	snprintf(mmFile, 64, "/tmp/%d", iRand);
+	int fd = open(mmFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	lseek(fd, needPageCount*pagesize, SEEK_SET);
+	write(fd, "\0", 1);
+	char * mem = (char*)mmap(NULL, needPageCount*pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	close(fd);
 
 	mprotect(mem, pagesize*(needPageCount-1), PROT_READ|PROT_WRITE);
@@ -480,9 +508,28 @@ void* protect_tail_new(const int size)
 
 	char * userAddr = mem+pagesize*(needPageCount-1)-size;
 
+	MMAPITEM mmitem;
+	memcpy(mmitem.fileName, mmFile, 64);
+	mmitem.mmapAddr = mem;
+	mmitem.size = needPageCount*pagesize;
+	s_mmapTable[userAddr] = mmitem;
+
+	printf("mmap file:%s addr:%p userAddr:%p\n", mmFile, mem, userAddr);
+
 	return userAddr;
 }
-void protect_tail_delete(const void* addr)
+void protect_tail_delete(void* addr)
 {
-	
+	std::map<void*, MMAPITEM>::iterator it = s_mmapTable.find(addr);
+	if(it != s_mmapTable.end()) {
+		MMAPITEM mmitem = it->second;
+		if (NULL != mmitem.mmapAddr)
+		{
+			munmap(mmitem.mmapAddr, mmitem.size);
+			remove(mmitem.fileName);
+			printf("protect_tail_delete ummap addr:%p size:%d file:%s\n", mmitem.mmapAddr, mmitem.size, mmitem.fileName);
+		}
+
+		s_mmapTable.erase(it);
+	}
 }

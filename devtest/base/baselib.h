@@ -139,7 +139,7 @@ extern const char* psmap_get(const char * key);
 // protect tail mem new
 
 void* protect_tail_new(const int size);
-void protect_tail_delete(const void* addr);
+void protect_tail_delete(void* addr);
 
 
 #endif //#ifndef BASELIB_H_
