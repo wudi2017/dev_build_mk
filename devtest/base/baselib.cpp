@@ -253,6 +253,25 @@ void proc_unlock()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
+// thread sync 
+
+
+ThreadLock::ThreadLock()
+{
+	pthread_mutex_init(&m_mutex_lock, NULL);
+}
+
+void ThreadLock::lock()
+{
+	pthread_mutex_lock(&m_mutex_lock);
+}
+
+void ThreadLock::unlock()
+{
+	pthread_mutex_unlock(&m_mutex_lock);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
 // proc share mem
 
 #include <map>
@@ -464,72 +483,126 @@ const char* psmap_get(const char * key)
 }
 
 
-
+//////////////////////////////////////////////////////////////////////////////////////////
+// protect tail mem new
+#include <list>
 #include <ctime>
 static bool s_bRandFlag = false;
-struct MMAPITEM
+struct MMAPBLOCKITEM
 {
-	MMAPITEM()
+	MMAPBLOCKITEM()
 	{
-		memset(fileName, 0, sizeof(fileName));
-		mmapAddr = NULL;
+		baseAddr = NULL;
 		size = 0;
-
+		rwsize = 0;
 	}
-	char fileName[64];
-	void* mmapAddr;
+	void* baseAddr;
 	int size;
+	int rwsize;
 };
-static std::map<void*, MMAPITEM> s_mmapTable;
-void* protect_tail_new(const int size)
+static ThreadLock s_mmapTableLock;
+//static std::map<void*, MMAPITEM> s_mmapTable;
+static bool s_bInitFlag = false;
+static std::list<MMAPBLOCKITEM> s_mmapFreeList;
+static std::map<void*,MMAPBLOCKITEM> s_mmapUsedList;
+static const int s_pageSize = 4*1024;
+static const int s_maxUserSize = 1*s_pageSize;
+static const int s_maxProtectBlockCount = 10;
+static const char* s_mmap_fileName = "/tmp/protectmem";
+char* s_mmap_baseAddr = NULL;
+void* protect_tail_mem_init()
 {
-	int pagesize = 1024*4;
-
-	int needPageCount = size/pagesize + 2;
-
-	if (!s_bRandFlag)
-	{
-		srand(time(0));
-		s_bRandFlag = true;
-	}
-
-	int iRand = rand();
-	char mmFile[64];
-	memset(mmFile, 0, 64);
-	snprintf(mmFile, 64, "/tmp/%d", iRand);
-	int fd = open(mmFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
-	lseek(fd, needPageCount*pagesize, SEEK_SET);
+	int mmapMemSize = s_maxProtectBlockCount * 2 * s_pageSize;
+	int fd = open(s_mmap_fileName, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+	lseek(fd, mmapMemSize, SEEK_SET);
 	write(fd, "\0", 1);
-	char * mem = (char*)mmap(NULL, needPageCount*pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	char * mem = (char*)mmap(NULL, mmapMemSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	close(fd);
 
-	mprotect(mem, pagesize*(needPageCount-1), PROT_READ|PROT_WRITE);
-	mprotect(mem+pagesize*(needPageCount-1), pagesize, PROT_READ);
+	if (mem)
+	{
+		printf("mmap file:%s\n", s_mmap_fileName);
+		s_mmap_baseAddr = mem;
 
-	char * userAddr = mem+pagesize*(needPageCount-1)-size;
+		for (int i = 0; i < s_maxProtectBlockCount; ++i)
+		{
+			char* protectBlockBaseAddr = mem+i*2*s_pageSize;
+			char* protectBlockReadOnlyAddr = protectBlockBaseAddr + s_pageSize;
 
-	MMAPITEM mmitem;
-	memcpy(mmitem.fileName, mmFile, 64);
-	mmitem.mmapAddr = mem;
-	mmitem.size = needPageCount*pagesize;
-	s_mmapTable[userAddr] = mmitem;
+			mprotect(protectBlockBaseAddr, s_pageSize, PROT_READ|PROT_WRITE);
+			mprotect(protectBlockReadOnlyAddr, s_pageSize, PROT_READ);
 
-	printf("mmap file:%s addr:%p userAddr:%p\n", mmFile, mem, userAddr);
+			printf("protectBlock protectBlockBaseAddr:%p protectBlockReadOnlyAddr:%p\n", protectBlockBaseAddr, protectBlockReadOnlyAddr);
+
+			MMAPBLOCKITEM mmapBlockItem;
+			mmapBlockItem.baseAddr = protectBlockBaseAddr;
+			mmapBlockItem.size = 2*s_pageSize;
+			mmapBlockItem.rwsize = s_pageSize;
+			s_mmapFreeList.push_back(mmapBlockItem);
+		}
+
+		printf("s_mmapFreeList block size=%d\n", s_mmapFreeList.size());
+	}
+}
+void* protect_tail_mem_deinit()
+{
+	if (s_mmap_baseAddr)
+	{
+		int mmapMemSize = s_maxProtectBlockCount * 2 * s_pageSize;
+		munmap(s_mmap_baseAddr, mmapMemSize);
+
+		remove(s_mmap_fileName);
+	}
+}
+void* protect_tail_new(const int size)
+{
+	s_mmapTableLock.lock();
+
+	if (!s_bInitFlag)
+	{
+		protect_tail_mem_init();
+		s_bInitFlag = true;
+	}
+
+	void* userAddr = NULL;
+
+	if (s_mmapFreeList.size() > 0)
+	{
+		MMAPBLOCKITEM mmapBlockItem = s_mmapFreeList.front();
+		if (size < mmapBlockItem.rwsize)
+		{
+			// rm freebock in free list
+			s_mmapFreeList.pop_front();
+
+			userAddr = mmapBlockItem.baseAddr + mmapBlockItem.rwsize - size;
+
+			// add used map
+			s_mmapUsedList[userAddr] = mmapBlockItem;
+
+			printf("protect_tail_new userAddr=%p protectBlockBaseAddr=%p \n", userAddr, mmapBlockItem.baseAddr);
+		}
+	}
+
+	s_mmapTableLock.unlock();
 
 	return userAddr;
 }
 void protect_tail_delete(void* addr)
 {
-	std::map<void*, MMAPITEM>::iterator it = s_mmapTable.find(addr);
-	if(it != s_mmapTable.end()) {
-		MMAPITEM mmitem = it->second;
-		if (NULL != mmitem.mmapAddr)
-		{
-			munmap(mmitem.mmapAddr, mmitem.size);
-			remove(mmitem.fileName);
-			printf("protect_tail_delete ummap addr:%p size:%d file:%s\n", mmitem.mmapAddr, mmitem.size, mmitem.fileName);
-		}
+	s_mmapTableLock.lock();
 
-		s_mmapTable.erase(it);
+	std::map<void*, MMAPBLOCKITEM>::iterator it = s_mmapUsedList.find(addr);
+	if(it != s_mmapUsedList.end()) {
+		MMAPBLOCKITEM mmitem = it->second;
+		if (NULL != mmitem.baseAddr)
+		{
+			s_mmapFreeList.push_back(mmitem);
+			
+			s_mmapUsedList.erase(it);
+
+			printf("protect_tail_delete addr=%p protectBlockBaseAddr=%p \n", addr, mmitem.baseAddr);
+		}
 	}
+
+	s_mmapTableLock.unlock();
 }
