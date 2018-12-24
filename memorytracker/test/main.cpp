@@ -2,6 +2,7 @@
 #include "string.h"
 #include "pthread.h"
 #include "unistd.h"
+#include "stdlib.h"
 
 void * test_thread1(void * pv_param)
 {
@@ -26,6 +27,22 @@ void * test_thread2(void * pv_param)
 	{
 		char* buf = new char[100];
 		memset(buf, 0, 101);
+		usleep(1000*1000*2);
+	}
+
+
+	return NULL;
+}
+
+void * test_thread3(void * pv_param)
+{
+	printf("test_thread3 begin\n");
+
+	for (int i = 0; i < 1000; ++i)
+	{
+		printf("XXXXXXXXX\n");
+		char* buf = (char*)malloc(100);
+		memset(buf, 0, 100);
 		usleep(1000*1000*1);
 	}
 
@@ -39,14 +56,19 @@ int main(int argc, char** argv)
 
 
 	// create monitor thread
-	{
-		pthread_t tid;
-    	int ret = pthread_create(&tid,NULL,&test_thread1,NULL);
-	}
+	// {
+	// 	pthread_t tid;
+ //    	int ret = pthread_create(&tid,NULL,&test_thread1,NULL);
+	// }
+
+	// {
+	// 	pthread_t tid;
+ //    	int ret = pthread_create(&tid,NULL,&test_thread2,NULL);
+	// }
 
 	{
 		pthread_t tid;
-    	int ret = pthread_create(&tid,NULL,&test_thread2,NULL);
+    	int ret = pthread_create(&tid,NULL,&test_thread3,NULL);
 	}
 
 	usleep(1000*1000*100);

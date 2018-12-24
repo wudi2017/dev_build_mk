@@ -25,6 +25,7 @@
 #include <cstddef>
 
 #define MEM_COMP_OPT_USE_MAGIC_CODE
+#define HAVE_WRAP_LINK_OPTION
 
 enum MemoryCategory
 {

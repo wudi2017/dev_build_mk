@@ -17,7 +17,8 @@ LOCAL_SRC_FILES := \
 	$(LOCAL_PATH)/src/MTMonitor.cpp
 
 LOCAL_CXXFLAGS:= -std=c++11 -fPIC
-LOCAL_LDLIBS:= -lpthread
+LOCAL_LDLIBS:= -lpthread -Wl,-wrap,malloc
+	#-Wl,-wrap,malloc,-wrap,realloc,-wrap,calloc,-wrap,free,-wrap,memset,-wrap,memcpy,-wrap,memmove
 LOCAL_SHARED_LIBRARIES:= 
 LOCAL_STATIC_LIBRARIES:= 
 include $(BUILD_SHARED_LIBRARY)  
@@ -34,7 +35,7 @@ LOCAL_SRC_FILES := \
 	$(LOCAL_PATH)/test/main.cpp
 
 LOCAL_CXXFLAGS:= -include MTNew.h 
-LOCAL_LDLIBS:= -lpthread
+LOCAL_LDLIBS:= -lpthread 
 LOCAL_SHARED_LIBRARIES:= 
 LOCAL_STATIC_LIBRARIES:= 
 include $(BUILD_EXECUTABLE)  
@@ -43,7 +44,7 @@ include $(BUILD_EXECUTABLE)
 # make libmemorytraker testlibmemorytraker
 #
 # export LD_PRELOAD=out/shared/libmemorytraker.so
-# ./out/bin/test-memorytracker
+# ./out/bin/testlibmemorytraker
 #
 # export LD_PRELOAD=
 #

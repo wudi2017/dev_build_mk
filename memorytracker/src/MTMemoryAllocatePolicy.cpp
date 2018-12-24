@@ -6,7 +6,7 @@
 #include "MTMonitor.h"
 
 MTRecorder s_MTRecorder;
-static MTMonitor s_MTMonitor;
+MTMonitor s_MTMonitor;
 
 void* MTMemoryAllocatePolicy::allocateBytes(size_t sz, MemoryCategory category, const char* pFileName, const int& lineNum)
 {
