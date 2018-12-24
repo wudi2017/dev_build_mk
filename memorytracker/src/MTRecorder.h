@@ -14,7 +14,7 @@
 #   define Hash_Space __gnu_cxx
 #endif
 
-#include "MTMemoryConfig.h"
+#include "MTConfig.h"
 #include "MTThreadLock.h"
 #include "MTSTLAllocator.h"
 #include <string>
@@ -31,7 +31,7 @@ public:
     virtual std::string ReportStatus(unsigned char category = MEMCATEGORY_NUM);
     virtual void BeginAnalyze();
     virtual std::string ReportLeaks();
-    virtual void CheckMemoryOverFlow();
+    virtual std::string dumpMemoryOverFlow();
     virtual void SetLog2File(bool bLog2File);
     virtual void SetRecordFileNameAndLineNum(bool bRecord, unsigned int category = MEMCATEGORY_NUM, bool bDiff = false);
 

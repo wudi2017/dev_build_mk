@@ -24,6 +24,8 @@
 
 #include <cstddef>
 
+#define MEM_COMP_OPT_USE_MAGIC_CODE
+
 enum MemoryCategory
 {
     MEMCATEGORY_UNKNOWN     = 0,

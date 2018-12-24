@@ -25,7 +25,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 
 include $(CLEAR_VARS) 
-LOCAL_MODULE := test-memorytracker
+LOCAL_MODULE := testlibmemorytraker
 LOCAL_C_INCLUDES:= \
 	$(LOCAL_PATH) \
 	$(LOCAL_PATH)/public
@@ -39,6 +39,8 @@ LOCAL_SHARED_LIBRARIES:=
 LOCAL_STATIC_LIBRARIES:= 
 include $(BUILD_EXECUTABLE)  
 # run command:  
+#
+# make libmemorytraker testlibmemorytraker
 #
 # export LD_PRELOAD=out/shared/libmemorytraker.so
 # ./out/bin/test-memorytracker

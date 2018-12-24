@@ -1,5 +1,5 @@
 
-#include "MTMemoryConfig.h"
+#include "MTConfig.h"
 
 class MTMemoryAllocatePolicy
 {

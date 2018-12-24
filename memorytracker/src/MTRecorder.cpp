@@ -263,7 +263,7 @@ std::string MTRecorder::ReportStatus(unsigned char category)
             // output the thread alloc infomation
             ReportThreadAllocate(strOut);
             // output nondeleted new
-            MEM_Log_private(m_bLog2File, "=============================list %s nondeleted new No:[%12d] BEGIN=============================\n", MemoryReportNewType[m_bReportDiff], m_ReportNo);
+            //MEM_Log_private(m_bLog2File, "=============================list %s nondeleted new No:[%12d] BEGIN=============================\n", MemoryReportNewType[m_bReportDiff], m_ReportNo);
             if (m_bReportDiff) {
                 ReportDiffNewAllocate();
                 mLastAllocations = mAllocations;
@@ -272,7 +272,7 @@ std::string MTRecorder::ReportStatus(unsigned char category)
                 ReportAllNewAllocate();
             }
 
-            MEM_Log_private(m_bLog2File, "=============================list %s nondeleted new No:[%12d] END=============================\n", MemoryReportNewType[m_bReportDiff], m_ReportNo);
+            //MEM_Log_private(m_bLog2File, "=============================list %s nondeleted new No:[%12d] END=============================\n", MemoryReportNewType[m_bReportDiff], m_ReportNo);
             ++m_ReportNo;
         }
     }
@@ -281,9 +281,11 @@ std::string MTRecorder::ReportStatus(unsigned char category)
     return strOut;
 }
 
-void MTRecorder::CheckMemoryOverFlow()
+std::string MTRecorder::dumpMemoryOverFlow()
 {
     // check all allocation, if it's overflow, write error log.
+    std::string dumpStatus;
+
 #ifdef MEM_COMP_OPT_USE_MAGIC_CODE
     MTThreadLock cMemAutoSync(m_cLock);
     AllocationMap::iterator iter = mAllocations.begin();
@@ -299,16 +301,33 @@ void MTRecorder::CheckMemoryOverFlow()
                 memcpy(szThreadName, "Unknow", sizeof("Unknow"));
             }
             if (NULL != iter->second->getFileName()) {
-                MEM_Log2Serial_private("Module:%d thread:%s ptr:%p, overflow file:%s line:%d, size:%" MEM_PRIusize_t "\n", iter->second->getCategory(),
+                // MEM_Log2Serial_private("Module:%d thread:%s ptr:%p, overflow file:%s line:%d, size:%lu\n", iter->second->getCategory(),
+                //     szThreadName, ptr, iter->second->getFileName(), iter->second->getLineNum(), sz);
+
+                char monitorWriteBuf[512];
+                snprintf(monitorWriteBuf,512,"Module:%d thread:%s ptr:%p, overflow file:%s line:%d, size:%lu\n", iter->second->getCategory(),
                     szThreadName, ptr, iter->second->getFileName(), iter->second->getLineNum(), sz);
+
+                MEM_Log_private(false, "%s", dumpStatus.c_str());
+                std::string curStat(monitorWriteBuf);
+                dumpStatus.append(curStat);
             }
             else {
-                MEM_Log2Serial_private("Module:%d thread:%s ptr:%p, overflow, size:%" MEM_PRIusize_t "\n", iter->second->getCategory(), szThreadName, ptr, sz);
+                // MEM_Log2Serial_private("Module:%d thread:%s ptr:%p, overflow, size:%lu\n", iter->second->getCategory(), szThreadName, ptr, sz);
+
+                char monitorWriteBuf[512];
+                snprintf(monitorWriteBuf,512,"Module:%d thread:%s ptr:%p, overflow, size:%lu\n", iter->second->getCategory(), szThreadName, ptr, sz);
+
+                MEM_Log_private(false, "%s", dumpStatus.c_str());
+                std::string curStat(monitorWriteBuf);
+                dumpStatus.append(curStat);
             }
         }
 
     }
 #endif
+
+    return dumpStatus;
 }
 
 void MTRecorder::ReportDiffNewAllocate()

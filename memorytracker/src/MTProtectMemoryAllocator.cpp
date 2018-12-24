@@ -2,6 +2,7 @@
 #include "MTSTLAllocator.h"
 #include "MTThreadLock.h"
 #include "MTLog.h"
+#include "MTMemoryPrivate.h"
 
 bool s_bEnableMemoryTracker = false;
 
@@ -44,30 +45,26 @@ static const char* s_mmap_fileName_prefix = "/tmp/protectmem_";
 
 char* s_mmap_baseAddr = NULL;
 
-void run_task_save_protectblock_status()
+std::string dump_status_protectmem()
 {
     MTThreadAutoLock autoLock(s_mmapTableLock);
+
+    std::string dumpStatus;
+
+    dumpStatus.assign("protectmem blockCount used[0] free[0]\n");
 
     if (NULL != sp_mmapFreeList && NULL != sp_mmapUsedList)
     {
         // monitor
         char monitorWriteBuf[512];
-        snprintf(monitorWriteBuf,512,"monitor protectmem blockCount used[%d] free[%d]\n", sp_mmapUsedList->size(), sp_mmapFreeList->size());
+        snprintf(monitorWriteBuf,512,"protectmem blockCount used[%d] free[%d]\n", sp_mmapUsedList->size(), sp_mmapFreeList->size());
 
-        MTLOG_I("monitor_func %s",monitorWriteBuf);
-
-        // write to file 
-        char monitorFileName[256];
-        memset(monitorFileName, 0, 256);
-        snprintf(monitorFileName, 256, "%s%d_monitor",s_mmap_fileName_prefix, getpid());
-        FILE *  fp;
-        fp=fopen(monitorFileName,"w");
-        if (NULL != fp)
-        {
-            fwrite(monitorWriteBuf,strlen(monitorWriteBuf),1,fp);
-            fclose(fp);
-        }
+        dumpStatus.assign(monitorWriteBuf);
     }
+
+    MEM_Log_private(false, "%s", dumpStatus.c_str());
+
+    return dumpStatus;
 }
 
 void protect_tail_mem_init()
@@ -102,7 +99,7 @@ void protect_tail_mem_init()
             char* protectBlockBaseAddr = mem+i*2*s_pageSize;
             char* protectBlockReadOnlyAddr = protectBlockBaseAddr + s_pageSize;
 
-            int magicCode = 0x12457836;
+            int magicCode = EXTRA_MAGIC_CODE;
             memcpy(protectBlockReadOnlyAddr, (void*)&magicCode, sizeof(int));
 
             mprotect(protectBlockBaseAddr, s_pageSize, PROT_READ|PROT_WRITE);
