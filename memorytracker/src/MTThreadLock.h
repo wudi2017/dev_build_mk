@@ -16,14 +16,29 @@
 #include <sys/sem.h>
 #include <stdio.h>
 
-class ThreadLock
+class MTThreadLock
 {
 public:
-    ThreadLock();
+    MTThreadLock();
     void lock();
     void unlock();
 
     pthread_mutex_t m_mutex_lock;
 };
+
+
+class MTThreadAutoLock
+{
+
+public:
+    MTThreadAutoLock(MTThreadLock& cLock);
+    ~MTThreadAutoLock();
+    
+private:
+    MTThreadAutoLock(const MTThreadLock& cLock);
+    MTThreadAutoLock& operator=(const MTThreadAutoLock& cSync);
+    MTThreadLock* m_pcLock;
+};
+
 
 #endif //MTTHREADLOCK_H

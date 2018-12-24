@@ -1,6 +1,7 @@
 #include "MTProtectMemoryAllocator.h"
 #include "MTSTLAllocator.h"
 #include "MTThreadLock.h"
+#include "MTLog.h"
 
 bool s_bEnableMemoryTracker = false;
 
@@ -31,7 +32,7 @@ struct PrivateMap
     typedef std::map<K, V, P, STLAllocator<std::pair<const K, V> > >    type;
 };
 
-static ThreadLock s_mmapTableLock;
+static MTThreadLock s_mmapTableLock;
 //static std::map<void*, MMAPITEM> s_mmapTable;
 static bool s_bInitFlag = false;
 static PrivateList<MMAPBLOCKITEM>::type* sp_mmapFreeList = NULL;
@@ -42,39 +43,33 @@ static const int s_maxProtectBlockCount = 10000;
 static const char* s_mmap_fileName_prefix = "/tmp/protectmem_";
 
 char* s_mmap_baseAddr = NULL;
-void * monitor_func(void * pv_param)
+
+void run_task_save_protectblock_status()
 {
-    printf("monitor_func start\n");
-    while(true)
+    MTThreadAutoLock autoLock(s_mmapTableLock);
+
+    if (NULL != sp_mmapFreeList && NULL != sp_mmapUsedList)
     {
-        usleep(1000*1000*3);
+        // monitor
+        char monitorWriteBuf[512];
+        snprintf(monitorWriteBuf,512,"monitor protectmem blockCount used[%d] free[%d]\n", sp_mmapUsedList->size(), sp_mmapFreeList->size());
 
-        s_mmapTableLock.lock();
+        MTLOG_I("monitor_func %s",monitorWriteBuf);
 
-        if (NULL != sp_mmapFreeList && NULL != sp_mmapUsedList)
+        // write to file 
+        char monitorFileName[256];
+        memset(monitorFileName, 0, 256);
+        snprintf(monitorFileName, 256, "%s%d_monitor",s_mmap_fileName_prefix, getpid());
+        FILE *  fp;
+        fp=fopen(monitorFileName,"w");
+        if (NULL != fp)
         {
-            // monitor
-            char monitorWriteBuf[512];
-            snprintf(monitorWriteBuf,512,"monitor protectmem blockCount used[%d] free[%d]\n", sp_mmapUsedList->size(), sp_mmapFreeList->size());
-
-            printf("monitor_func %s\n",monitorWriteBuf);
-
-            // write to file 
-            char monitorFileName[256];
-            memset(monitorFileName, 0, 256);
-            snprintf(monitorFileName, 256, "%s%d_monitor",s_mmap_fileName_prefix, getpid());
-            FILE *  fp;
-            fp=fopen(monitorFileName,"w");
-            if (NULL != fp)
-            {
-                fwrite(monitorWriteBuf,strlen(monitorWriteBuf),1,fp);
-                fclose(fp);
-            }
+            fwrite(monitorWriteBuf,strlen(monitorWriteBuf),1,fp);
+            fclose(fp);
         }
-
-        s_mmapTableLock.unlock();
     }
 }
+
 void protect_tail_mem_init()
 {
     static PrivateList<MMAPBLOCKITEM>::type s_mmapFreeList;
@@ -82,7 +77,7 @@ void protect_tail_mem_init()
     sp_mmapFreeList = &s_mmapFreeList;
     sp_mmapUsedList = &s_mmapUsedList;
 
-    printf("protect_tail_mem_init sp_mmapFreeList=%p sp_mmapUsedList=%p\n", sp_mmapFreeList, sp_mmapUsedList);
+    MTLOG_I("protect_tail_mem_init sp_mmapFreeList=%p sp_mmapUsedList=%p", sp_mmapFreeList, sp_mmapUsedList);
 
     char mapFileName[256];
     memset(mapFileName, 0, 256);
@@ -99,7 +94,7 @@ void protect_tail_mem_init()
 
     if (mem)
     {
-        printf("mmap file:%s\n", mapFileName);
+        MTLOG_I("mmap file:%s", mapFileName);
         s_mmap_baseAddr = mem;
 
         for (int i = 0; i < s_maxProtectBlockCount; ++i)
@@ -113,7 +108,7 @@ void protect_tail_mem_init()
             mprotect(protectBlockBaseAddr, s_pageSize, PROT_READ|PROT_WRITE);
             mprotect(protectBlockReadOnlyAddr, s_pageSize, PROT_READ);
 
-            printf("protectBlock protectBlockBaseAddr:%p protectBlockReadOnlyAddr:%p\n", protectBlockBaseAddr, protectBlockReadOnlyAddr);
+            MTLOG_I("protectBlock protectBlockBaseAddr:%p protectBlockReadOnlyAddr:%p", protectBlockBaseAddr, protectBlockReadOnlyAddr);
 
             MMAPBLOCKITEM mmapBlockItem;
             mmapBlockItem.baseAddr = protectBlockBaseAddr;
@@ -122,11 +117,8 @@ void protect_tail_mem_init()
             s_mmapFreeList.push_back(mmapBlockItem);
         }
 
-        printf("s_mmapFreeList block size=%d\n", s_mmapFreeList.size());
+        MTLOG_I("s_mmapFreeList block size=%d", s_mmapFreeList.size());
 
-        // create monitor thread
-        pthread_t tid;
-        int ret = pthread_create(&tid,NULL,&monitor_func,NULL);
     }
 }
 void protect_tail_mem_deinit()
@@ -145,7 +137,7 @@ void protect_tail_mem_deinit()
 }
 void* protect_tail_new(const int size)
 {
-    s_mmapTableLock.lock();
+    MTThreadAutoLock autoLock(s_mmapTableLock);
 
     if (!s_bInitFlag)
     {
@@ -172,12 +164,10 @@ void* protect_tail_new(const int size)
                 // add used map
                 sp_mmapUsedList->insert(std::pair<void*,MMAPBLOCKITEM>(userAddr,mmapBlockItem));
 
-                printf("protect_tail_new userAddr=%p size=%d protectBlockBaseAddr=%p \n", userAddr, size, mmapBlockItem.baseAddr);
+                MTLOG_I("protect_tail_new userAddr=%p size=%d protectBlockBaseAddr=%p", userAddr, size, mmapBlockItem.baseAddr);
             }
         }
     }
-
-    s_mmapTableLock.unlock();
 
     return userAddr;
 }
@@ -185,7 +175,7 @@ bool protect_tail_try_delete(void* addr)
 {
     bool bDelete = false;
 
-    s_mmapTableLock.lock();
+    MTThreadAutoLock autoLock(s_mmapTableLock);
 
     if (NULL != sp_mmapFreeList && NULL != sp_mmapUsedList)
     {
@@ -199,12 +189,10 @@ bool protect_tail_try_delete(void* addr)
                 sp_mmapUsedList->erase(it);
 
                 bDelete = true;
-                printf("protect_tail_delete addr=%p protectBlockBaseAddr=%p \n", addr, mmitem.baseAddr);
+                MTLOG_I("protect_tail_delete addr=%p protectBlockBaseAddr=%p", addr, mmitem.baseAddr);
             }
         }
     }
-
-    s_mmapTableLock.unlock();
 
     return bDelete;
 }

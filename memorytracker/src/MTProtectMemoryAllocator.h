@@ -18,5 +18,6 @@
 
 void* protect_tail_new(const int size);
 bool protect_tail_try_delete(void* addr);
+void run_task_save_protectblock_status();
 
 #endif
