@@ -19,7 +19,7 @@ void PrintMemBuf(const void * buf, const int size)
     int i = 0;
     for (; i < size; ++i)
     {
-        char c = cbuf[i];
+        unsigned char c = cbuf[i];
         sprintf(tmpbuf, "%02x ", c);
         sLine.append(tmpbuf);
 
