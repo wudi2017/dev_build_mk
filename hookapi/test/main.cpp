@@ -12,38 +12,11 @@
 #include <sys/stat.h>
 #include <string.h>
 
-
-	void test()
-	{
-		// show
-		struct dirent * filename;
-
-		int pid = getpid();
-		printf("pid:%d\n", pid);
-		DIR * dir;                   // return value for opendir()
-		char strdir[256];
-		snprintf(strdir, 256, "/proc/%d/fd/", pid);
-		dir = opendir(strdir);
-		if( NULL == dir )
-		{
-			printf("Can not open dir \n");
-			return;
-		}
-		while( ( filename = readdir(dir) ) != NULL )
-		{
-			// get rid of "." and ".."
-			if( strcmp( filename->d_name , "." ) == 0 || 
-				strcmp( filename->d_name , "..") == 0    )
-				continue;
-			printf("%s\n", filename ->d_name);
-			char filefullname[256];
-			snprintf(filefullname, 256, "%s%s",strdir, filename ->d_name);
-			char realpath[256];
-			readlink(filefullname, realpath, 256);
-			printf("%s\n", realpath);
-		}
-
-	}
+int test() __attribute__ ((thread("threadA", "threadB", "threadC")));
+int test()
+{
+	return 0;
+}
 
 int main(int argc, char** argv)
 {
