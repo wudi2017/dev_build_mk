@@ -120,3 +120,69 @@ void testcase_cpp_obj_func_call()
 	int itest3 = pfaddrcc(pa, 10);
 	printf("call C style func_addr = %d\n", itest3);
 }
+
+class CB1
+{
+public:
+	CB1()
+	{
+		b1=1;
+	}
+	void printCB1()
+	{
+		printf("CB1::printCB1 %p [%d]\n", this, b1);
+	}
+	int b1;
+};
+
+class CB2
+{
+public:
+	CB2()
+	{
+		b2=2;
+	}
+	void printCB2()
+	{
+		printf("CB2::printCB2 %p [%d]\n", this, b2);
+	}
+	int b2;
+};
+
+class D: public CB1, public CB2
+{
+public:
+	D()
+	{
+		d=3;
+	}
+	void printD()
+	{
+		printf("D::printD %p [%d]\n", this, d);
+	}
+	int d;
+};
+
+typedef void (*fp_printCB1)(CB1* o);
+typedef void (*fp_printCB2)(CB2* o);
+
+void testcase_cpp_obj_func_call2()
+{
+	D d;
+
+	d.printCB1();
+	d.printCB2();
+
+	{
+		void* pf = (void*)&CB1::printCB1;
+		printf("pfaddrpcb1=%p\n", pf);
+		fp_printCB1 pfaddrpcb1 = (fp_printCB1)pf;
+		pfaddrpcb1(&d);
+	}
+	{
+		void* pf = (void*)&CB2::printCB2;
+		printf("pfaddrpcb2=%p\n", pf);
+		fp_printCB2 pfaddrpcb2 = (fp_printCB2)pf;
+		pfaddrpcb2(&d);
+	}
+}
