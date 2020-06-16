@@ -13,7 +13,9 @@ void PrintMemBuf(const void * buf, const int size)
     const char * cbuf = (const char*)buf;
     int eventLineOutBytes = 32;
 
-    std::string sLine;
+	const int LINE_SIZE = 512;
+    char sLine[LINE_SIZE];
+    memset(sLine, 0, LINE_SIZE);
     char tmpbuf[16];
 
     int i = 0;
@@ -21,23 +23,23 @@ void PrintMemBuf(const void * buf, const int size)
     {
         unsigned char c = cbuf[i];
         sprintf(tmpbuf, "%02x ", c);
-        sLine.append(tmpbuf);
+        strcat(sLine, tmpbuf);
 
         if ((i+1)%eventLineOutBytes == 0)
         {
             int ad_i = i/eventLineOutBytes;
             const void* addr = cbuf + ad_i*eventLineOutBytes;
-            TESTLOG("[%p] %s\n", addr, sLine.c_str());
-            sLine.clear();
+            printf("[%p] %s\n", addr, sLine);
+            memset(sLine, 0, LINE_SIZE);
         }
     }
 
-    if (sLine.length()>0)
+    if (strlen(sLine)>0)
     {
         int ad_i = i/eventLineOutBytes;
         const void* addr = cbuf + ad_i*eventLineOutBytes;
-        TESTLOG("[%p] %s\n", addr, sLine.c_str());
-        sLine.clear();
+        printf("[%p] %s\n", addr, sLine);
+        memset(sLine, 0, LINE_SIZE);
     }
 }
 
